@@ -57,44 +57,30 @@ function listRoutes() {
   return routes;
 }
 
-function getFilesWithRelativePathsSync(dirPath) {
+
+function listDir(dirPath) {
   try {
-    const files = fs.readdirSync(dirPath, { withFileTypes: true }); // Read dir synchronously
-    const filePaths = [];
+    const items = fs.readdirSync(dirPath);
+    const result = [];
+    items.forEach(item => {
+      const itemPath = path.join(dirPath, item);
+      const stats = fs.statSync(itemPath);
 
-    for (const file of files) {
-      const fullPath = path.join(dirPath, file.name);
-      if (file.isDirectory()) {
-        // Recursively get files in subdirectories
-        const subDirFiles = getFilesWithRelativePathsSync(fullPath);
-        filePaths.push(...subDirFiles); // Add files from subdirectory
-      } else {
-        // Get relative path
-        const relativePath = path.relative(dirPath, fullPath);
-        filePaths.push(relativePath);
+      if (stats.isDirectory()) {
+        result.push(...listDir(itemPath).map(relativePath => path.join(item, relativePath)));
+      } else if (stats.isFile()) {
+        if (item && item.endsWith('.html')) {
+          result.push(item.toString())
+        }
       }
-    }
-
-    return filePaths;
-  } catch (error) {
-    console.error('Error reading directory:', error);
-    return []; // Return an empty array on error
+    });
+    return result;
+  } catch (e) {
+    return [];
   }
 }
 
 function printRoutes() {
-  /**
-   * const myURL = url.format({
-    protocol: 'https',
-    hostname: 'www.example.com',
-    pathname: '/path/to/resource',
-    query: {
-        key1: 'value1',
-        key2: 'value 2' // Spaces will be encoded
-    }
-});
-
-   */
   const protocol = "http";
   const hostname = getLocalIpAddress();
 
@@ -102,7 +88,7 @@ function printRoutes() {
   // iterate all files in static folder and add them to the list
   const staticFiles = path.join(__dirname, 'static');
   // iterate staticFiles recursively
-  const files = getFilesWithRelativePathsSync(staticFiles);
+  const files = listDir(staticFiles);
   files.forEach(file => console.log(url.format({ protocol, hostname, port, pathname: path.join('/static', file) })));
 }
 
