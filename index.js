@@ -5,6 +5,7 @@ const fs = require('fs');
 const url = require('url');
 
 const app = express();
+app.set('etag', false);
 const port = 3000;
 
 
@@ -99,6 +100,14 @@ app.get('/', (req, res) => {
 app.get('/a', (req, res) => {
   res.send('Hello World!');
 });
+
+app.get("/stream/referrer-test", async (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+  // read file sync
+  const html = fs.readFileSync(path.join(__dirname, 'stream/referrer-test.html'), 'utf8');
+  res.send(html);
+})
 
 app.use('/static', express.static('static'));
 
